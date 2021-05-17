@@ -20,11 +20,18 @@ Checking the security of the binary, I saw that it is a PIE, but without a stack
 
 To find the offset for overflowing the buffer I just kept running `perl -e 'print "\x41"x40;'` with different multipliers until I got a segmentation fault. The correct offset is 40 bytes.
 
-Looking at `california` (offset `0x11dc`) and `silicon_valley` (offset `0x1283`) in Radare2, I notice that they write something to various offsets of some memory address called `win_land`. Looking more closely, `california` writes `/bin` to `win_land`, and `silicon_valley` writes `/sh`. As there is also a counter called `len` used for offsets, calling `california` then `silicon_valley` writes `/bin/sh` to `win_land`.
+Looking at `california` (offset `0x11dc`) and `silicon_valley` (offset `0x1283`) in Radare2, I notice that they write something to various offsets of some memory address called `win_land` in byte increments. Looking more closely, in `california`  those bytes are /, b, i and n, and in `silicon_valley` are /, s and h. As there is also a counter called `len` in the stack used for storing offsets, calling `california` then `silicon_valley` writes first `/bin`, then `/sh` to successive bytes in `win_land`, thus getting you the string `/bin/sh` to call `system("/bin/sh")` on.
+![California](california.png)
+![Silicon Valley](silicon_valley.png)
+
 
 Well, that was easy.
 
-Looking at the disassembly of the function `loss` in Radare2, I see that towards the end it runs `system(win_land)` if you pass a few complicated tests on the arguments to the function. However, since we can jump straight to this address (at offset `0x11c3`), we can call this directly without the need to provide arguments to `loss`.
+Looking at the disassembly of the function `loss` in Radare2, I see that towards the end it runs `system(win_land)` if you pass a few complicated tests on the arguments to the function:
+![Loss function](loss.png)
+
+However, you can skip all these complicated tests and go right to the `lea rdi, obj.win_land` instruction at `0x11c3`, which puts `win_land` into the `rdi` register and calls `system()` with that as the argument.
+
 
 So, the plan is: get the base address of `main` from the first line, calculate the offsets of `california`, `silicon_valley` and `loss`, and use this address to make a rop chain running those in order. Here is the code:
 
@@ -51,3 +58,6 @@ p.interactive()
 ```
 
 This pops a shell, and the flag is at `flag.txt`.
+
+
+*As a side note, if you fill the 40 junk bytes before your ROP chain with anything but zeroes, the program says "I think you should come here more often.", and if you fill it with zeroes, the program says "Oh! You are already a regular visitor!"*

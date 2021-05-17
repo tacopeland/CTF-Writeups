@@ -79,6 +79,7 @@ Coming back to r2, we look in the disassembly of `main` and see that it runs `vu
 ```
 
 So, what is our goal? Preferably, `/bin/sh`. How can we do that relatively easily, with a ROP chain and no pre-existing code? Ret2libc.
+
 That's where the `Dockerfile` comes in. Looking in the dockerfile, you see it pulls a certain version of Ubuntu.
 Except if Ubuntu 20.04 has updated its glibc during the CTF, the glibc installed in this dockerfile should be the exact same build as the one on the remote system.
 
@@ -105,6 +106,7 @@ Thinking ahead, we should get the offset for a function in the GOT that has alre
 So, to find `fgets()` in `libc.so.6`, we open it up in Radare2, run the `aaaa` command to analyse the binary, and then run the command `s sym.fgets`.
 This leaves us at the address `0x000857b0`, where `0x0` is the base address.
 Next, we want the address of `system()`. Through the same process as `fgets()`, we find the offset `0x00055410`.
+
 Finally, we want the string `/bin/sh`. To find this, run the `/ /bin/sh` in Radare2 to get the offset `0x001b75aa`.
 
 Now we have all our offsets, we can start searching for gadgets to construct our ROP chain.
@@ -115,9 +117,11 @@ So, we need a gadget to `pop rdi`. Using `ropper -f baby_bof --search 'pop rdi'`
 Next, we need a function to call and some arguments to apply.
 
 I've picked the function `puts()`, and will be accessing it via the Procedure Linkage Table. So, we run `s sym.imp.puts` in r2 to get the address `0x4004a0`.
-As an argument, we will have the GOT entry of `fgets()`, so that we can leak the libc address. To find this, just run `s sym..got.plt` in r2, and find the address of `reloc.fgets`, which is `0x601028` in our case.
+As an argument, we will have the GOT entry of `fgets()`, so that we can leak the libc address.
 
-Finally, we need a return address. Because we want to run another chain after this, we just set this to the start of `vuln`, so `0x4005b8` (not `0x4005b7 because we've messed up our base pointer in the previous chain).
+To find this, just run `s sym..got.plt` in r2, and find the address of `reloc.fgets`, which is `0x601028` in our case.
+
+Finally, we need a return address. Because we want to run another chain after this, we just set this to the start of `vuln`, so `0x4005b8` (not `0x4005b7` because we messed up our base pointer in the previous chain).
 
 So, joining it all together:
 ```python

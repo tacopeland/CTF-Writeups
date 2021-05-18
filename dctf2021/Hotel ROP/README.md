@@ -20,7 +20,7 @@ Checking the security of the binary, I saw that it is a PIE, but without a stack
 
 To find the offset for overflowing the buffer I just kept running `perl -e 'print "\x41"x40;'` with different multipliers until I got a segmentation fault. The correct offset is 40 bytes.
 
-Looking at `california` (offset `0x11dc`) and `silicon_valley` (offset `0x1283`) in Radare2, I notice that they write something to various offsets of some memory address called `win_land` in byte increments. Looking more closely, in `california`  those bytes are /, b, i and n, and in `silicon_valley` are /, s and h. As there is also a counter called `len` in the stack used for storing offsets, calling `california` then `silicon_valley` writes first `/bin`, then `/sh` to successive bytes in `win_land`, thus getting you the string `/bin/sh` to call `system("/bin/sh")` on.
+Looking at `california` (offset `0x11dc`) and `silicon_valley` (offset `0x1283`) in Radare2, I notice that they write something to various offsets of some memory address called `win_land` in byte increments. Looking more closely, in `california`  those bytes are "/", "b", "i" and "n", and in `silicon_valley` are "/", "s" and "h". As there is also a counter called `len` in the stack used for storing offsets, calling `california` then `silicon_valley` writes first `/bin`, then `/sh` to successive bytes in `win_land`, thus getting you the string `/bin/sh` to call `system("/bin/sh")` on.
 
 ![California](california.png)
 

@@ -141,4 +141,41 @@ From this, we can see that we are given the means to calculate `d` once again, a
 
 First we calculate `d = inverse_mod(e, (p-1)*(q-1))`, go into the calculator, and choose to exponentiate the matrix `E` to the `d`th power. This is the monke method, and thus takes quite a while to calculate. Thus, we get the trace `49950804502047051227137104580045215724336659140015649493235377279128780499418717912205545795127744212022566085276888178843266423`. This, however, isn't our message.
 
-Looking at the definition of the trace on Wikipedia, we see that it's just the sum of the elements on the diagonal of the matrix. Since our elements are all our message `m`, this must be some small multiple of `m` (up to 31*m). So, we see that our trace divided by 3 gives us the correct flag.
+Looking at the definition of the trace on Wikipedia, we see that it's just the sum of the elements on the diagonal of the matrix. Since our elements are all our message `m`, this must be some small multiple of `m` (up to `31*m`). So, we see that our trace divided by 3 gives us the correct flag.
+
+
+## RSAtrix 4
+"For the final iteration of RSAtrix, we've removed all the information we could. No more matrix factors, no more given permutation, and no more primes. Can you still decrypt the flag?"
+
+In this challenge, we are supposed to have a lot less information than before. However, looking at the code, we still have all we need to solve it the same way as before:
+
+```python
+n = 12250029783200708035442688430907155767407534107589849686856901602023044745588908817287475893837114530200770756874643028769505799000457410384361237849623138499604018042429324632369604169982302200676229
+e = 3
+d = 8166686522133805356961792287271437178271689405059899791237934401348696497059272544858317262558076346381188965364240700913300230902627376039004235148937938590077100058175744322454350852499041154941427
+N = 62
+
+R = Zmod(n)
+MS = MatrixSpace(R, N, N)
+G = SECRET # G is a server-side secret!
+
+def encrypt(m):
+    M = m * G
+    return (M^e).list()
+```
+
+How convenient, they even calculated `d` for us! However, it seems that by pure coincidence, that the trace of both `E` and `E^d` are `0`. So, how are we to get our flag?
+
+Keep in mind that this is the monke solution. Exponentiating such a large matrix with such a large index is very slow and makes the CTF staff sad.
+
+Well, we can just hope that our matrix G is a permutation matrix like before! So, what this means is we just want to permute our decrypted matrix `K = E^d` until we can get some elements on the diagonal to go into our trace. Keep multiplying this matrix by `G`, until, when you multiply it y `G^4`, you get your nonzero trace.
+
+Now, we can just divide the trace by successive integer powers (maximum is `62*m`) until we are left with our flag.
+
+
+## RSAtrix 5
+"We said "final iteration" before, but that's before we found a bunch of unintended solvepaths. Now, you've only got one shot...
+
+Please don't try any matrix exponentials that take longer than a minute to run, as they freeze up the server for everyone else."
+
+Joke's on them, I did it anyway. You can do this the exact way that you do RSAtrix 4, but there are two catches: you don't get d as a number, but you can use it as a variable in the calculator. So, you can choose to raise the matrix `E` to the power `d` by typing `d` literally. The resulting matrix either has a nonzero trace, in which you can keep dividing until you get the flag, or you can multiply the resulting matrix by `G` and hope the result has a nonzero trace. However, the second catch is you can only do one of each operation before you are disconnected. This means that you only have two shots at getting a nonzero trace: The first show when you exponentiate, and the second when you multiply by `G`. If you don't get a nonzero trace after that, you have to try again.

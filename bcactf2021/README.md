@@ -12,6 +12,7 @@ RSAtrix 2 | Crypto | 200
 RSAtrix 3 | Crypto | 300
 RSAtrix 4 | Crypto | 400
 RSAtrix 5 | Crypto | 450
+Rainbow Passage | Crypto | 225
 FNES 1 | Crypto | 150
 FNES 2 | Crypto | 375
 FNES 3 | Crypto | 600
